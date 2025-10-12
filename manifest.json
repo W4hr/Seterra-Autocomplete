@@ -1,0 +1,32 @@
+{
+    "manifest_version": 3,
+    "name": "Seterra Autocomplete",
+    "version": "1.0",
+    "description": "Adds autocomplete suggestions to Seterra quizzes on GeoGuessr.",
+    "permissions": ["storage"],
+    "host_permissions": ["*://*.geoguessr.com/*"],
+    "content_scripts": [
+        {
+        "matches": ["*://*.geoguessr.com/*"],
+        "js": ["content-script.js"],
+        "all_frames": true
+        }
+    ],
+    "action": {
+        "default_icon": "icons/icon-48.png",
+        "default_title": "Seterra"
+    },
+    "background": {
+        "scripts": ["background.js"]
+    },
+    "options_ui": {
+        "page": "settings.html",
+        "open_in_tab": false
+    },
+    "icons": { "48": "icons/icon-48.png" },
+    "browser_specific_settings": {
+        "gecko": {
+          "id": "seterra-autocomplete@your-domain.com"
+        }
+    }
+}
