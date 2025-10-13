@@ -14,6 +14,8 @@ let last_submit;
 
 const charMapRegex = new RegExp(`[${Object.keys(charMap).join('')}]`, 'g')
 
+const browserAPI = typeof chrome !== "undefined" ? chrome: firefox
+
 class ErrorE extends Error {
     constructor (message) {
         super(message)
@@ -114,20 +116,21 @@ function generateList(options, inputEl, formEl, inputElHeight, settings) {
     formEl.insertBefore(option_list, formEl.children[1])
 } 
 
-function submitInput(value = "") {
+function submitInput(value) {
     if (value === last_submit) return
-    const map_submit = document.querySelector('[class^="game-type-map-input_button"]')
-    if (map_submit) map_submit.click()
-    const flag_form = document.querySelectorAll('[class^="game-type-flag-input_form"]')[0]
-    const flag_submit = flag_form.querySelector("button")
-    if (flag_submit) flag_submit.click()
-    if (flag_submit || map_submit) destroyOptionList()
+    if (!SubmitForm) throw new ErrorE("SubmitForm is not defined")
+    const submitButton = SubmitForm.querySelector("button")
+    if (submitButton) {
+        submitButton.click() 
+        destroyOptionList()
+    }
     last_submit = value
+    console.log(`Set: ${value} - prev: ${last_submit}`)
 }
 
 function main(formEls, isFlag) {
     console.log("Seterra Autocomplete Extension initialized")
-    browser.storage.sync.get({
+    browserAPI.storage.sync.get({
         skip_fill_in: true,
         force_typeout: false,
         autosubmit: false
@@ -158,11 +161,14 @@ function main(formEls, isFlag) {
                 cursor: pointer;
                 pointer-events: none;
             }
+
             .autocomplete-item label:hover {
                 background-color: #f0f0f0;
+                cusor: pointer;
             }
             .autocomplete-item input[type="radio"]:checked + label {
                 background-color: #e0e0e0;
+                cusor: pointer;
             }
         `
         document.head.appendChild(style)
@@ -185,6 +191,10 @@ function main(formEls, isFlag) {
                 return
             }
             generateList(options, inputEl, formEl, inputElHeight, settings)
+
+            if (inputEl.value === "") {
+                last_submit = null;
+            }
         })
         
         inputEl.addEventListener("keydown", (e) => {
@@ -243,30 +253,39 @@ function destroyOptionList() {
     }
 }
 
+let SubmitForm;
+
 const interval = setInterval(() => {
     const startButton = document.querySelector('[data-qa="start-quiz-button"]')
     if (startButton) {
         clearInterval(interval)
         startButton.addEventListener("click", () => {
             const interval2 = setInterval(() => {
-                const flagForm = document.querySelectorAll('[class^="game-type-flag-input_form"]')
-                const mapForm = document.querySelectorAll('[class^="game-type-map-input_form"]')
-                let formEls;
-                let isFlag;
-                if (flagForm.length === 1) {
-                    formEls = flagForm
-                    isFlag = true
-                } else if (flagForm.length > 1 || mapForm.length > 1) {
-                    throw new ErrorE("Invalid website structure: multiple matching elements found")
-                } else if (mapForm.length === 1) {
-                    formEls = mapForm
-                    isFlag = false
-                } else {
-                    throw new ErrorE("Invalid website structure: no matching elements found")
-                }
-                if (formEls) {
-                    clearInterval(interval2)
-                    main(formEls, isFlag)
+                try {
+                    const flagForm = document.querySelectorAll('[class^="game-type-flag-input_form"]')
+                    const mapForm = document.querySelectorAll('[class^="game-type-map-input_form"]')
+                    let formEls;
+                    let isFlag;
+                    if (flagForm.length === 1) {
+                        formEls = flagForm
+                        isFlag = true
+                        SubmitForm = flagForm[0]
+                    } else if (flagForm.length > 1 || mapForm.length > 1) {
+                        throw new ErrorE("Invalid website structure: multiple matching elements found")
+                    } else if (mapForm.length === 1) {
+                        formEls = mapForm
+                        isFlag = false
+                        SubmitForm = mapForm[0]
+                    } else {
+                        throw new ErrorE("Invalid website structure: no matching elements found")
+                    }
+                    console.log(SubmitForm)
+                    if (formEls) {
+                        clearInterval(interval2)
+                        main(formEls, isFlag)
+                    }
+                } catch (e) {
+                    return e
                 }
             }, 50)
         })
