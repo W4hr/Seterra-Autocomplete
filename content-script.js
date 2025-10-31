@@ -279,7 +279,6 @@ const interval = setInterval(() => {
                     } else {
                         throw new ErrorE("Invalid website structure: no matching elements found")
                     }
-                    console.log(SubmitForm)
                     if (formEls) {
                         clearInterval(interval2)
                         main(formEls, isFlag)
